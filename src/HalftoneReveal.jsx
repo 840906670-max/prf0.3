@@ -20,6 +20,7 @@ export default function HalftoneReveal({
     startX: 0,
     startY: 0,
     mode: 'tap',
+    hasCapture: false,
   })
 
   const isTouchPointer = (event) => event.pointerType === 'touch' || event.pointerType === 'pen'
@@ -39,10 +40,14 @@ export default function HalftoneReveal({
         startX: event.clientX,
         startY: event.clientY,
         mode: 'tap',
+        hasCapture: false,
       }
+      // Move the lens immediately on a tap, but do not capture the pointer
+      // yet. Capturing on touchstart can prevent the browser from handing a
+      // vertical swipe back to page scrolling, which made the lower part of
+      // this mobile frame feel untouchable.
       updatePoint(event)
       setActive(true)
-      event.currentTarget.setPointerCapture?.(event.pointerId)
       return
     }
     updatePoint(event)
@@ -62,7 +67,9 @@ export default function HalftoneReveal({
         setActive(true)
       }
       touchGestureRef.current.pointerId = null
-      event.currentTarget.releasePointerCapture?.(event.pointerId)
+      if (gesture.hasCapture) {
+        event.currentTarget.releasePointerCapture?.(event.pointerId)
+      }
       return
     }
     updatePoint(event)
@@ -77,6 +84,10 @@ export default function HalftoneReveal({
       const deltaY = event.clientY - gesture.startY
       if (gesture.mode === 'tap' && Math.max(Math.abs(deltaX), Math.abs(deltaY)) > 10) {
         gesture.mode = Math.abs(deltaX) >= Math.abs(deltaY) ? 'drag' : 'scroll'
+        if (gesture.mode === 'drag') {
+          event.currentTarget.setPointerCapture?.(event.pointerId)
+          gesture.hasCapture = true
+        }
       }
 
       if (gesture.mode === 'drag') {
@@ -91,8 +102,11 @@ export default function HalftoneReveal({
 
   const handlePointerCancel = (event) => {
     if (touchGestureRef.current.pointerId === event.pointerId) {
+      const gesture = touchGestureRef.current
       touchGestureRef.current.pointerId = null
-      event.currentTarget.releasePointerCapture?.(event.pointerId)
+      if (gesture.hasCapture) {
+        event.currentTarget.releasePointerCapture?.(event.pointerId)
+      }
     }
   }
 
