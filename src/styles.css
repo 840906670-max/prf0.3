@@ -4260,6 +4260,14 @@ main,
   .resumeCardPortraitTilted {
     aspect-ratio: 4 / 5;
     border-radius: 13px;
+    touch-action: pan-y;
+  }
+
+  /* The portrait is decorative on a phone. Let a finger pass through it so
+     vertical page scrolling cannot be mistaken for a card tilt gesture. */
+  .resumeCardPortraitTilted .resumeProfileCard {
+    pointer-events: none;
+    touch-action: pan-y;
   }
 
   .resumeCardPortraitPixel {

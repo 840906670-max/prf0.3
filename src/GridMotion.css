@@ -148,4 +148,6 @@
   .gridMotionLightbox { padding: 16px; }
   .gridMotionLightboxFrame { width: 88vw; height: 72vh; border-radius: 18px; }
   .gridMotionLightboxFrame--image { height: 72vh; }
+  .gridMotionHintZh { font-size: 0; }
+  .gridMotionHintZh::after { content: '长按查看'; font-size: .5rem; }
 }

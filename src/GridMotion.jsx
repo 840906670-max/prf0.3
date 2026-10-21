@@ -18,14 +18,31 @@ export default function GridMotion({ items = [], gradientColor = '#e45830' }) {
     dragging: false,
     hovered: false,
     pointerX: 0,
+    pointerY: 0,
     moved: false,
     pendingItem: null,
     openedPointer: false,
+    touch: false,
   })
   const [activeItem, setActiveItem] = useState(null)
   const [hoveredItem, setHoveredItem] = useState(null)
   const [activeImageSize, setActiveImageSize] = useState(null)
+  const longPressTimerRef = useRef(null)
+  const longPressItemRef = useRef(null)
   const activeImageUrl = getImageUrl(activeItem)
+
+  const isTouchPointer = (event) => event.pointerType === 'touch' || event.pointerType === 'pen'
+  const isPortraitPhone = () =>
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(max-width: 520px) and (orientation: portrait)').matches
+
+  const clearLongPress = () => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+    longPressItemRef.current = null
+  }
 
   useEffect(() => {
     setActiveImageSize(null)
@@ -71,15 +88,18 @@ export default function GridMotion({ items = [], gradientColor = '#e45830' }) {
       gsap.ticker.remove(tick)
       observer?.disconnect()
       document.removeEventListener('visibilitychange', onVisibilityChange)
+      clearLongPress()
     }
   }, [])
 
   const beginDrag = (event) => {
     const motion = motionRef.current
     motion.hovered = true
+    motion.touch = isTouchPointer(event)
     if (!event.target.closest?.('.gridMotionItem')) motion.pendingItem = null
     motion.dragging = true
     motion.pointerX = event.clientX
+    motion.pointerY = event.clientY
     motion.moved = false
     event.currentTarget.setPointerCapture?.(event.pointerId)
   }
@@ -91,14 +111,21 @@ export default function GridMotion({ items = [], gradientColor = '#e45830' }) {
       return
     }
     const delta = event.clientX - motion.pointerX
-    if (Math.abs(delta) > 4) motion.moved = true
+    const deltaY = event.clientY - motion.pointerY
+    if (Math.max(Math.abs(delta), Math.abs(deltaY)) > 4) {
+      motion.moved = true
+      clearLongPress()
+    }
     motion.offset -= delta * .9
     motion.pointerX = event.clientX
+    motion.pointerY = event.clientY
   }
 
   const endDrag = (event) => {
     const motion = motionRef.current
-    if (!motion.moved && motion.pendingItem) {
+    const touchLike = motion.touch || isTouchPointer(event)
+    clearLongPress()
+    if (!motion.moved && motion.pendingItem && !touchLike) {
       motion.openedPointer = true
       setActiveItem(motion.pendingItem)
     }
@@ -114,6 +141,7 @@ export default function GridMotion({ items = [], gradientColor = '#e45830' }) {
     setTimeout(() => {
       motion.moved = false
       motion.openedPointer = false
+      motion.touch = false
     }, 0)
     if (event.currentTarget.hasPointerCapture?.(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
   }
@@ -156,17 +184,27 @@ export default function GridMotion({ items = [], gradientColor = '#e45830' }) {
                     key={itemKey}
                     role="button"
                     tabIndex={0}
-                    aria-label="单击放大图片"
+                    aria-label="长按或按 Enter 放大图片"
                     onPointerEnter={() => {
                       motionRef.current.hovered = true
                       setHoveredItem(itemKey)
                     }}
                     onPointerLeave={() => { setHoveredItem(null) }}
                     onPointerDown={() => {
-                      motionRef.current.pendingItem = item
-                      motionRef.current.openedPointer = false
+                      const motion = motionRef.current
+                      motion.pendingItem = item
+                      motion.openedPointer = false
+                      clearLongPress()
+                      if (isPortraitPhone()) {
+                        longPressItemRef.current = item
+                        longPressTimerRef.current = window.setTimeout(() => {
+                          if (motion.pendingItem !== item || motion.moved || !motion.dragging) return
+                          motion.openedPointer = true
+                          setActiveItem(item)
+                        }, 520)
+                      }
                     }}
-                    onClick={() => {
+                    onClick={(event) => {
                       const motion = motionRef.current
                       if (motion.openedPointer) {
                         motion.openedPointer = false
@@ -176,7 +214,16 @@ export default function GridMotion({ items = [], gradientColor = '#e45830' }) {
                         motion.moved = false
                         return
                       }
+                      // On a portrait phone, a short tap is reserved for
+                      // scrolling and horizontal browsing. Require the
+                      // deliberate long-press timer above to open artwork.
+                      if (motion.touch || isPortraitPhone()) {
+                        if (event.detail !== 0) return
+                      }
                       setActiveItem(item)
+                    }}
+                    onContextMenu={(event) => {
+                      if (isPortraitPhone()) event.preventDefault()
                     }}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter' || event.key === ' ') {

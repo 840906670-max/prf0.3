@@ -15,7 +15,14 @@ export default function HalftoneReveal({
 }) {
   const [active, setActive] = useState(false)
   const [point, setPoint] = useState({ x: 50, y: 50 })
-  const touchPointerRef = useRef(false)
+  const touchGestureRef = useRef({
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    mode: 'tap',
+  })
+
+  const isTouchPointer = (event) => event.pointerType === 'touch' || event.pointerType === 'pen'
 
   const updatePoint = (event) => {
     const rect = event.currentTarget.getBoundingClientRect()
@@ -26,27 +33,67 @@ export default function HalftoneReveal({
   }
 
   const handlePointerDown = (event) => {
-    updatePoint(event)
-    if (event.pointerType === 'touch' || event.pointerType === 'pen') {
-      touchPointerRef.current = true
+    if (isTouchPointer(event)) {
+      touchGestureRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        mode: 'tap',
+      }
+      updatePoint(event)
       setActive(true)
       event.currentTarget.setPointerCapture?.(event.pointerId)
+      return
     }
+    updatePoint(event)
   }
 
   const handlePointerUp = (event) => {
-    // Use the final touch position so a tap or a short drag always places
-    // the circular viewer exactly where the person intended on a phone.
-    if (event.pointerType === 'touch' || event.pointerType === 'pen') {
-      updatePoint(event)
-      setActive(true)
+    if (isTouchPointer(event)) {
+      const gesture = touchGestureRef.current
+      if (gesture.pointerId !== event.pointerId) return
+
+      // A tap, or a deliberate horizontal drag, moves the lens. A vertical
+      // gesture belongs to the page and must not move the lens while the
+      // browser scrolls past this section.
+      if (gesture.mode !== 'scroll') {
+        if (gesture.mode === 'drag') event.preventDefault()
+        updatePoint(event)
+        setActive(true)
+      }
+      touchGestureRef.current.pointerId = null
       event.currentTarget.releasePointerCapture?.(event.pointerId)
+      return
     }
+    updatePoint(event)
   }
 
   const handlePointerMove = (event) => {
+    if (isTouchPointer(event)) {
+      const gesture = touchGestureRef.current
+      if (gesture.pointerId !== event.pointerId) return
+
+      const deltaX = event.clientX - gesture.startX
+      const deltaY = event.clientY - gesture.startY
+      if (gesture.mode === 'tap' && Math.max(Math.abs(deltaX), Math.abs(deltaY)) > 10) {
+        gesture.mode = Math.abs(deltaX) >= Math.abs(deltaY) ? 'drag' : 'scroll'
+      }
+
+      if (gesture.mode === 'drag') {
+        event.preventDefault()
+        updatePoint(event)
+        setActive(true)
+      }
+      return
+    }
     updatePoint(event)
-    if (event.pointerType === 'touch' || event.pointerType === 'pen') setActive(true)
+  }
+
+  const handlePointerCancel = (event) => {
+    if (touchGestureRef.current.pointerId === event.pointerId) {
+      touchGestureRef.current.pointerId = null
+      event.currentTarget.releasePointerCapture?.(event.pointerId)
+    }
   }
 
   return (
@@ -65,17 +112,14 @@ export default function HalftoneReveal({
       }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       onPointerLeave={(event) => {
         if (event.pointerType === 'mouse') setActive(false)
       }}
       onClick={(event) => {
-        // Pointer interaction handles mouse hover and touch directly. Keep
-        // click for keyboard activation without immediately cancelling a
-        // touch reveal through the synthetic click that follows a tap.
-        if (touchPointerRef.current) {
-          touchPointerRef.current = false
-          return
-        }
+        // Pointer interaction handles mouse and touch directly. Keep click
+        // for keyboard activation only, so the synthetic click after a tap
+        // cannot move the lens a second time.
         if (event.detail === 0) setActive((value) => !value)
       }}
       onKeyDown={(event) => {
