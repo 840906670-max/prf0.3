@@ -1,0 +1,17 @@
+{
+  "description": "个人简历微信小程序壳",
+  "packOptions": {
+    "ignore": []
+  },
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "postcss": true,
+    "minified": true
+  },
+  "compileType": "miniprogram",
+  "libVersion": "latest",
+  "appid": "touristappid",
+  "projectname": "个人简历微信小程序",
+  "miniprogramRoot": "./"
+}

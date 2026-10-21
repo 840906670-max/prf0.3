@@ -1,0 +1,7 @@
+{
+  "description": "复制为 project.private.config.json 后填写自己的 AppID",
+  "projectname": "个人简历微信小程序",
+  "setting": {
+    "urlCheck": true
+  }
+}
