@@ -2,6 +2,8 @@
   "description": "个人简历微信小程序壳",
   "packOptions": {
     "ignore": [
+      { "type": "folder", "value": "assets" },
+      { "type": "folder", "value": "native-backup-20261109" },
       { "type": "file", "value": "assets/hero-2.jpg" },
       { "type": "file", "value": "assets/hero-3.jpg" },
       { "type": "file", "value": "assets/hero-4.jpg" },
