@@ -1,17 +1,51 @@
 {
   "description": "个人简历微信小程序壳",
   "packOptions": {
-    "ignore": []
+    "ignore": [
+      { "type": "file", "value": "assets/hero-2.jpg" },
+      { "type": "file", "value": "assets/hero-3.jpg" },
+      { "type": "file", "value": "assets/hero-4.jpg" },
+      { "type": "file", "value": "assets/hero-5.jpg" },
+      { "type": "file", "value": "assets/hero-main.jpg" },
+      { "type": "file", "value": "assets/zero-3d.jpg" },
+      { "type": "file", "value": "assets/zero-live.jpg" },
+      { "type": "file", "value": "assets/zero-storyboard.jpg" },
+      { "type": "file", "value": "assets/communication-reference.png" },
+      { "type": "file", "value": "assets/design-planning.png" },
+      { "type": "file", "value": "assets/build-execution.png" },
+      { "type": "file", "value": "assets/shooting-contingency.png" },
+      { "type": "file", "value": "assets/acceptance-feedback.png" }
+    ],
+    "include": []
   },
   "setting": {
     "urlCheck": true,
     "es6": true,
     "postcss": true,
-    "minified": true
+    "minified": true,
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "enhance": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "minifyWXML": true,
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "useCompilerPlugins": false,
+    "condition": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    }
   },
   "compileType": "miniprogram",
   "libVersion": "latest",
-  "appid": "touristappid",
+  "appid": "wxda785b4edf73f7b1",
   "projectname": "个人简历微信小程序",
-  "miniprogramRoot": "./"
+  "miniprogramRoot": "./",
+  "simulatorPluginLibVersion": {},
+  "editorSetting": {}
 }
